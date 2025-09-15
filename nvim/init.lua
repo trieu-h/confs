@@ -20,19 +20,20 @@ vim.opt.splitright = true
 
 local map = vim.keymap.set
 vim.g.mapleader = " "
+vim.g.maplocalleader = " "
 
 vim.pack.add({
+	{ src = "https://github.com/vague2k/vague.nvim" },
 	{ src = "https://github.com/tssm/fairyfloss.vim" },
 	{ src = "https://github.com/stevearc/oil.nvim" },
-	{ src = "https://github.com/nvim-treesitter/nvim-treesitter", version = "main" },
+  { src = "https://github.com/nvim-treesitter/nvim-treesitter" },
 	{ src = "https://github.com/neovim/nvim-lspconfig" },
 	{ src = "https://github.com/mason-org/mason.nvim" },
-	{ src = "https://github.com/nvim-lualine/lualine.nvim" }
+	{ src = "https://github.com/R-nvim/R.nvim" }
 })
 
 require "mason".setup()
 require "oil".setup()
-require "lualine".setup()
 map('n', '<leader>e', ":Oil<CR>")
 map('i', '<c-e>', function() vim.lsp.completion.get() end)
 
@@ -71,11 +72,16 @@ vim.lsp.config.lua = {
 		'selene.toml',
 		'selene.yml',
 		'.git',
-	}}
+	}
+}
 
-vim.lsp.enable({'lua'})
+vim.lsp.config.rlang = {
+	cmd = { 'r-languageserver' },
+	filetypes = { 'r' },
+}
 
-map('n', '<leader>lf', vim.lsp.buf.format)
+vim.lsp.enable({'lua', 'rlang'})
+map('n', '<leader>fm', vim.lsp.buf.format)
 vim.cmd [[set completeopt+=menuone,noselect,popup]]
 vim.cmd("colorscheme fairyfloss")
 
@@ -84,10 +90,35 @@ map("n", "[b", ":bprevious<CR>")
 map("v", "<", "<gv")
 map("v", ">", ">gv")
 
+local augroup = vim.api.nvim_create_augroup("UserConfig", {})
+
 vim.api.nvim_create_autocmd("TextYankPost", {
-  group = vim.api.nvim_create_augroup("UserConfig", {}),
+  group = augroup,
   callback = function()
     vim.highlight.on_yank({ timeout = 450 })
   end,
 })
 
+vim.api.nvim_create_autocmd("FileType", { -- enable treesitter highlighting and indents
+	group = augroup,
+	callback = function(ev)
+		local filetype = ev.match
+		local lang = vim.treesitter.language.get_lang(filetype)
+		if vim.treesitter.language.add(lang) then
+			if vim.treesitter.query.get(filetype, "indents") then
+				vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+			end
+			if vim.treesitter.query.get(filetype, "folds") then
+				vim.wo.foldexpr = "v:lua.vim.treesitter.foldexpr()"
+			end
+			vim.treesitter.start()
+		end
+	end,
+})
+
+local ensureInstalled = {"markdown", "markdown_inline", "r", "rnoweb", "yaml", "latex", "csv", "typescript"}
+local alreadyInstalled = require("nvim-treesitter.config").get_installed()
+local parsersToInstall = vim.iter(ensureInstalled)
+	:filter(function(parser) return not vim.tbl_contains(alreadyInstalled, parser) end)
+	:totable()
+require("nvim-treesitter").install(parsersToInstall)
