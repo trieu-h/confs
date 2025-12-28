@@ -15,10 +15,12 @@ vim.opt.undofile = true
 vim.opt.signcolumn = "yes"
 vim.opt.splitbelow = true
 vim.opt.splitright = true
-vim.cmd([[set mouse=]])
-vim.cmd([[set noswapfile]])
-vim.cmd([[set ignorecase]])
-vim.cmd([[set smartcase]])
+vim.cmd([[
+  set mouse=a
+  set noswapfile
+  set ignorecase
+  set smartcase
+]])
 
 local map = vim.keymap.set
 vim.g.mapleader = " "
@@ -35,7 +37,9 @@ vim.pack.add({
   { src = "https://github.com/R-nvim/R.nvim" },
   { src = "https://github.com/windwp/nvim-ts-autotag" },
   { src = "https://github.com/saghen/blink.cmp" },
-  { src = "https://github.com/jake-stewart/multicursor.nvim" }
+  { src = "https://github.com/jake-stewart/multicursor.nvim" },
+  { src = "https://github.com/tpope/vim-fugitive" },
+  { src = "https://github.com/ntpeters/vim-better-whitespace" }
 })
 
 vim.cmd("colorscheme lemons")
